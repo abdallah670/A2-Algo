@@ -31,7 +31,7 @@ private:
         string name;
         bool occupied;
 
-        HashEntry() : playerID(-1), name(""), occupied(false)  {}
+        HashEntry() : playerID(-1), name(""), occupied(false) {}
         HashEntry(int id, const string& n) : playerID(id), name(n), occupied(true) {}
     };
     static const int TABLE_SIZE = 101;  // Fixed size as per requirements
@@ -78,7 +78,7 @@ private:
                 return index;
             }
         }
-        return -1;  
+        return -1;
     }
 
 
@@ -89,7 +89,7 @@ public:
     void insert(int playerID, string name) override {
         // TODO: Implement double hashing insert
         // Remember to handle collisions using h1(key) + i * h2(key)
-        if (currentSize>=TABLE_SIZE) {
+        if (currentSize >= TABLE_SIZE) {
             throw "Table is full";
         }
         int index = findIndex(playerID);
@@ -553,7 +553,7 @@ private:
         }
         x->color = BLACK;
     }
-  
+
     // MAIN DELETE FUNCTION
     void rbDelete(Node* z) {
         Node* y = z;
@@ -612,7 +612,7 @@ public:
         nil->left = nil->right = nil->parent = nil;
         root = nil;
     }
-   
+
 
     ~ConcreteAuctionTree() {
         clearTree(root);
@@ -624,14 +624,14 @@ public:
         deleteItem(itemID);
         Node* newNode = new Node(itemID, price);
         bstInsert(newNode);
-      
+
     }
 
     void deleteItem(int itemID) override {
         Node* z = findNode(itemID);
         if (z == nil) return;
         rbDelete(z);
-       
+
     }
 };
 
@@ -643,7 +643,7 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-   return 0;
+    return 0;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
@@ -672,7 +672,7 @@ bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, i
 }
 
 long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long long silverRate,
-                                       vector<vector<int>>& roadData) {
+    vector<vector<int>>& roadData) {
     // TODO: Implement Minimum Spanning Tree (Kruskal's or Prim's)
     // roadData[i] = {u, v, goldCost, silverCost}
     // Total cost = goldCost * goldRate + silverCost * silverRate
@@ -700,20 +700,20 @@ int ServerKernel::minIntervals(vector<char>& tasks, int n) {
     return 0;
 }
 
- //=========================================================
- //FACTORY FUNCTIONS (Required for Testing)
- //=========================================================
+//=========================================================
+//FACTORY FUNCTIONS (Required for Testing)
+//=========================================================
 
 extern "C" {
-    PlayerTable* createPlayerTable() { 
-        return new ConcretePlayerTable(); 
+    PlayerTable* createPlayerTable() {
+        return new ConcretePlayerTable();
     }
 
-    Leaderboard* createLeaderboard() { 
-        return new ConcreteLeaderboard(); 
+    Leaderboard* createLeaderboard() {
+        return new ConcreteLeaderboard();
     }
 
-    AuctionTree* createAuctionTree() { 
-        return new ConcreteAuctionTree(); 
+    AuctionTree* createAuctionTree() {
+        return new ConcreteAuctionTree();
     }
 }
