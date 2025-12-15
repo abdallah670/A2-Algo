@@ -34,90 +34,38 @@ private:
         HashEntry() : playerID(-1), name(""), occupied(false)  {}
         HashEntry(int id, const string& n) : playerID(id), name(n), occupied(true) {}
     };
-    vector<HashEntry> table;
-    int size;        // Current number of elements
-    int capacity;    // Total table size
-    const int INITIAL_CAPACITY = 101;  // Prime number
-    const double LOAD_FACTOR_THRESHOLD = 0.7;
-    // Helper: Multiplication method for h1 (primary hash) ----->h1(k)=floor(n(kA%1))
+    static const int TABLE_SIZE = 101;  // Fixed size as per requirements
+    // Remove the vector and replace with:
+    HashEntry table[TABLE_SIZE];  // Fixed array instead of vector
+    // Add these constants at the top of class:
+    int currentSize = 0;
+    // Primary hash function
     int hash1(int key) {
-        //golden ratio constant
-        const double A = 0.618033;
-        double product = key * A;
-        double fractional = product - floor(product);
-        return (int)(capacity * fractional);
+        return key % TABLE_SIZE;
     }
-    // Helper: Multiplication method for h2 (secondary hash)
-    // MUST return value in range [1, capacity-1] and never 0
+    // Secondary hash function for double hashing
+    // Must return value in [1, TABLE_SIZE-1] and never 0
     int hash2(int key) {
-        // Use a different irrational constant
-        const double B = 0.7071067812;  // sqrt(2)/2
-
-        double product = key * B;
-        double fractional = product - floor(product);
-
-        // Ensure result is in [1, capacity-1]
-        int result = 1 + (int)((capacity - 2) * fractional);
-
-        // Double-check it's never 0
-        if (result == 0) result = 1;
-        if (result >= capacity) result = capacity - 1;
-
-        return result;
+        return 1 + (key % (TABLE_SIZE - 1));
     }
-    int nextPrime(int n) {
-        if (n <= 1) return 2;
-        if (n % 2 == 0) n++;  // Start with odd number
 
-        while (true) {
-            if (isPrime(n)) return n;
-            n += 2;  // Check only odd numbers
-        }
-    }
-    // Helper: Check if number is prime (optimized)
-    bool isPrime(int n) {
-        if (n <= 1) return false;
-        for (int i = 2; i * i <= n; i++) {
-            if (n % i == 0) return false;
-        }
-        return true;
-    }
-    void rehash() {
-        vector<HashEntry> oldTable = table;
-        int oldCapacity = capacity;
-        int newCapacity = nextPrime(oldCapacity * 2);
-        table.clear();
-        table.resize(newCapacity);
-        capacity = newCapacity;
-        size = 0;
-        for (auto& entry : oldTable) {
-            if (entry.occupied) {
-                insert(entry.playerID, entry.name);
-            }
-        }
-    }
-    int probePosition(int key, int attempt) {
-        int h1 = hash1(key);
-        int h2 = hash2(key);  // Or hash2_alternative
-
-        return (h1 + attempt * h2) % capacity;
-    }
-    double getLoadFactor() const {
-        return (double)size / capacity;
+    // Combined double hash for probing
+    int doubleHash(int key, int attempt) {
+        return (hash1(key) + attempt * hash2(key)) % TABLE_SIZE;
     }
     int findIndex(int playerID) {
-        for (int i = 0; i < capacity; i++) {
-            int index = probePosition(playerID, i);
+        for (int i = 0; i < TABLE_SIZE; i++) {
+            int index = doubleHash(playerID, i);
             //insert
-            if (!table[index].occupied) {
+            if (!table[index].occupied || table[index].playerID == playerID) {
                 return index;
             }
         }
         return -1;
     }
     int findExistingIndex(int playerID) {
-        for (int attempt = 0; attempt < capacity; attempt++) {
-            int index = probePosition(playerID, attempt);
+        for (int attempt = 0; attempt < TABLE_SIZE; attempt++) {
+            int index = doubleHash(playerID, attempt);
 
             // Empty slot means not found
             if (!table[index].occupied) {
@@ -136,27 +84,20 @@ private:
 
 public:
     ConcretePlayerTable() {
-        // TODO: Initialize your hash table
-        size = 0;capacity=INITIAL_CAPACITY;
-        table.resize(capacity);
-       
+        currentSize = 0;
     }
-
-
     void insert(int playerID, string name) override {
         // TODO: Implement double hashing insert
         // Remember to handle collisions using h1(key) + i * h2(key)
-        if (getLoadFactor() > LOAD_FACTOR_THRESHOLD) {
-            rehash();
+        if (currentSize>=TABLE_SIZE) {
+            throw "Table is full";
         }
         int index = findIndex(playerID);
         if (index == -1) {
-            rehash();
-            insert(playerID, name);  // Try again
-            return;
+            throw "Table is full";
         }
         table[index] = HashEntry(playerID, name);
-        size++;
+        currentSize++;
     }
 
     string search(int playerID) override {
@@ -179,15 +120,33 @@ private:
     };
 
     Node* head;
-    const int MAX_LEVEL = 4;
+    const int MAX_LEVEL = 16;
     int currentLevel;  // Track current max level in use
-
+    // Helper to compare two nodes based on requirements
+    // Primary: higher score comes first, Secondary: lower ID comes first for same score
+    bool shouldPlaceBefore(Node* a, Node* b) {
+        if (!b) return true; // NULL comes at the end
+        if (a->score > b->score) return true;
+        if (a->score == b->score && a->playerID < b->playerID) return true;
+        return false;
+    }
     int randomLevel() {
         int level = 0;
         while (rand() % 2 == 0 && level < MAX_LEVEL - 1) {
             level++;
         }
         return level;
+    }
+    // Linear scan to find node by ID 
+    Node* findNodeByID(int playerID) {
+        Node* current = head->next[0];
+        while (current) {
+            if (current->playerID == playerID) {
+                return current;
+            }
+            current = current->next[0];
+        }
+        return nullptr;
     }
 
 public:
@@ -228,13 +187,11 @@ public:
 
         // Find insertion position and insert at each level
         for (int i = currentLevel; i >= 0; i--) {
-            // Skip nodes with higher scores
-            while (curr->next[i] && curr->next[i]->score > score) {
-                curr = curr->next[i];
-            }
-
-            // For same scores, insert after (simplest)
-            while (curr->next[i] && curr->next[i]->score == score) {
+            // CORRECTED: Proper tie-breaking
+            // Move while next node has HIGHER score OR same score with LOWER ID
+            while (curr->next[i] &&
+                (curr->next[i]->score > score ||
+                    (curr->next[i]->score == score && curr->next[i]->playerID < playerID))) {
                 curr = curr->next[i];
             }
 
@@ -248,49 +205,48 @@ public:
 
     void removePlayer(int playerID) override {
         // First find the node and its score (linear search at level 0)
-        Node* target = nullptr;
-        Node* curr = head->next[0];
+        Node* target = findNodeByID(playerID);
+        if (!target) return;  // Player not found
 
-        while (curr && curr->playerID != playerID) {
-            curr = curr->next[0];
-        }
-
-        if (!curr) return;  // Player not found
-        target = curr;
         int targetScore = target->score;
 
-        // Now use skip list search with score
+        // Now use skip list search with score AND tie-breaking
         vector<Node*> update(MAX_LEVEL + 1, nullptr);
         Node* current = head;
 
-        // Find update nodes using score comparison
+        // Find update nodes using the SAME comparison as insertion
         for (int i = MAX_LEVEL; i >= 0; i--) {
-            while (current->next[i] && current->next[i]->score > targetScore) {
+            // Use proper comparison: higher scores first, then lower IDs for same score
+            while (current->next[i] &&
+                (current->next[i]->score > targetScore ||
+                    (current->next[i]->score == targetScore &&
+                        current->next[i]->playerID < playerID))) {
                 current = current->next[i];
             }
             update[i] = current;
         }
 
-        // Find exact node starting from update[0]
-        current = update[0];
-        while (current->next[0] && current->next[0]->score == targetScore &&
-            current->next[0]->playerID != playerID) {
-            current = current->next[0];
-        }
+        // At this point, current->next[0] should be our target OR 
+        // a node with same score but lower ID
 
-        // If we found the right node, remove it
+        // Check if we found the exact node
         if (current->next[0] && current->next[0]->playerID == playerID) {
             Node* toRemove = current->next[0];
 
             // Remove from all levels
             for (int i = 0; i <= MAX_LEVEL; i++) {
-                // Find the node at this level
-                Node* levelCurr = update[i];
-                while (levelCurr->next[i] && levelCurr->next[i] != toRemove) {
-                    levelCurr = levelCurr->next[i];
+                // The update[i] should already point to predecessor
+                // But we need to verify and possibly adjust
+                Node* pred = update[i];
+
+                // If pred->next[i] is not our target, we need to find it
+                while (pred->next[i] && pred->next[i] != toRemove) {
+                    pred = pred->next[i];
                 }
-                if (levelCurr->next[i] == toRemove) {
-                    levelCurr->next[i] = toRemove->next[i];
+
+                // Now pred should point to node before target (or be target itself)
+                if (pred->next[i] == toRemove) {
+                    pred->next[i] = toRemove->next[i];
                 }
             }
 
@@ -306,7 +262,6 @@ public:
     vector<int> getTopN(int n) override {
         vector<int> result;
         Node* curr = head->next[0];
-
         while (curr && result.size() < n) {
             result.push_back(curr->playerID);
             curr = curr->next[0];
@@ -385,7 +340,6 @@ private:
         x->right = y;
         y->parent = x;
     }
-
     // ========== INSERTION ==========
     void insertFixup(Node* z) {
         while (z->parent->color == RED) {
@@ -599,7 +553,7 @@ private:
         }
         x->color = BLACK;
     }
-
+  
     // MAIN DELETE FUNCTION
     void rbDelete(Node* z) {
         Node* y = z;
@@ -651,30 +605,6 @@ private:
         clearTree(node->right);
         delete node;
     }
-    void printTreeHelper(Node* node, string indent, bool last) {
-        if (node != nil) {
-            cout << indent;
-            if (last) {
-                cout << "R----";
-                indent += "     ";
-            }
-            else {
-                cout << "L----";
-                indent += "|    ";
-            }
-
-            string color = node->color == RED ? "RED" : "BLACK";
-            cout << "ID:" << node->itemID << " Price:" << node->price
-                << " (" << color << ")" << endl;
-
-            printTreeHelper(node->left, indent, false);
-            printTreeHelper(node->right, indent, true);
-        }
-    }
-    void printTree() {
-        cout << "\nTree structure:" << endl;
-        printTreeHelper(root, "", true);
-    }
 public:
     ConcreteAuctionTree() {
         nil = new Node(-1, -1);
@@ -691,23 +621,17 @@ public:
 
     void insertItem(int itemID, int price) override {
         // Check if item exists
-        Node* existing = findNode(itemID);
-        if (existing != nil) {
-            // Update: remove old, insert new
-            deleteItem(itemID);
-        }
-
+        deleteItem(itemID);
         Node* newNode = new Node(itemID, price);
         bstInsert(newNode);
-        printTree();
+      
     }
 
     void deleteItem(int itemID) override {
         Node* z = findNode(itemID);
         if (z == nil) return;
-
         rbDelete(z);
-        printTree();
+       
     }
 };
 
@@ -719,7 +643,7 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-    return 0;
+   return 0;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
@@ -776,9 +700,9 @@ int ServerKernel::minIntervals(vector<char>& tasks, int n) {
     return 0;
 }
 
-// =========================================================
-// FACTORY FUNCTIONS (Required for Testing)
-// =========================================================
+ //=========================================================
+ //FACTORY FUNCTIONS (Required for Testing)
+ //=========================================================
 
 extern "C" {
     PlayerTable* createPlayerTable() { 
