@@ -89,15 +89,6 @@ public:
     void insert(int playerID, string name) override {
         // TODO: Implement double hashing insert
         // Remember to handle collisions using h1(key) + i * h2(key)
-        if (currentSize >= TABLE_SIZE) {
-            throw "Table is full";
-        }
-        int index = findIndex(playerID);
-        if (index == -1) {
-            throw "Table is full";
-        }
-        table[index] = HashEntry(playerID, name);
-        currentSize++;
     }
 
     string search(int playerID) override {
@@ -643,7 +634,7 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-    return 0;
+   return 0;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
