@@ -87,8 +87,23 @@ public:
         currentSize = 0;
     }
     void insert(int playerID, string name) override {
-        // TODO: Implement double hashing insert
-        // Remember to handle collisions using h1(key) + i * h2(key)
+        // Check if table is full
+        if (currentSize >= TABLE_SIZE) {
+            throw "Table is full";
+        }
+
+        int index = findIndex(playerID);
+        if (index == -1) {
+            throw "Table is full";
+        }
+
+        // If inserting into empty slot (not update), increase size
+        if (!table[index].occupied) {
+            currentSize++;
+        }
+
+        // Insert/update
+        table[index] = HashEntry(playerID, name);
     }
 
     string search(int playerID) override {
@@ -634,7 +649,7 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-   return 0;
+    return 0;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
@@ -684,11 +699,23 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) 
 // =========================================================
 
 int ServerKernel::minIntervals(vector<char>& tasks, int n) {
-    // TODO: Implement task scheduler with cooling time
-    // Same task must wait 'n' intervals before running again
-    // Return minimum total intervals needed (including idle time)
-    // Hint: Use greedy approach with frequency counting
-    return 0;
+    if (tasks.size() == 0)return 0;
+    int freq[26] = { 0 };
+    for (char c : tasks)
+        freq[c - 'A']++;
+
+    int maxFreq = 0;
+    for (int i = 0; i < 26; i++)
+        maxFreq = max(maxFreq, freq[i]);
+
+    int count_maxFreq = 0;
+    for (int i = 0; i < 26; i++) {
+        if (freq[i] == maxFreq)
+            count_maxFreq++;
+    }
+    int sizeTasks = tasks.size();
+    return max(sizeTasks, (((maxFreq - 1) * (n + 1)) + count_maxFreq));
+   
 }
 
 //=========================================================

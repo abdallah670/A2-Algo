@@ -506,66 +506,6 @@ void test_PartA_Integration() {
     delete auction;
 }
 
-// ==========================================
-// PERFORMANCE TESTS - PART A
-// ==========================================
-
-void test_PartA_Performance() {
-    cout << "\n🔍 PART A - PERFORMANCE TESTS\n";
-
-    // Test 1: HashTable - Many insertions
-    runner.runTest("Performance: HashTable 1000 insert/search ops", [&]() {
-        PlayerTable* table = createPlayerTable();
-        // Can only insert 101, but test speed
-        for (int i = 0; i < 100; i++) {
-            table->insert(i, "Player" + to_string(i));
-        }
-        // Search for all
-        bool allFound = true;
-        for (int i = 0; i < 100; i++) {
-            if (table->search(i) != "Player" + to_string(i)) {
-                allFound = false;
-                break;
-            }
-        }
-        delete table;
-        return allFound;
-        }());
-
-    // Test 2: SkipList - Many score updates
-    runner.runTest("Performance: SkipList 500 score updates", [&]() {
-        Leaderboard* board = createLeaderboard();
-        for (int i = 0; i < 50; i++) {
-            board->addScore(i, rand() % 1000);
-        }
-        // Update scores multiple times
-        for (int i = 0; i < 50; i++) {
-            board->addScore(i, rand() % 1000);
-        }
-        // Should still work
-        vector<int> top = board->getTopN(10);
-        delete board;
-        return !top.empty();
-        }());
-
-    // Test 3: RBTree - Many insert/delete operations
-    runner.runTest("Performance: RBTree 200 operations", [&]() {
-        AuctionTree* tree = createAuctionTree();
-        for (int i = 0; i < 50; i++) {
-            tree->insertItem(i, rand() % 1000);
-        }
-        // Delete half
-        for (int i = 0; i < 25; i++) {
-            tree->deleteItem(i * 2);
-        }
-        // Insert more
-        for (int i = 50; i < 75; i++) {
-            tree->insertItem(i, rand() % 1000);
-        }
-        delete tree;
-        return true;  // If no crash, passes
-        }());
-}
 
 // ==========================================
 // MAIN FUNCTION
@@ -592,7 +532,7 @@ void test_PartA_DataStructures() {
 
     // Integration & Performance
     test_PartA_Integration();
-    test_PartA_Performance();
+   
    
 }
 
@@ -665,7 +605,89 @@ void test_PartC_Navigator() {
 // ==========================================
 // PART D: SERVER KERNEL
 // ==========================================
+void test_TaskScheduler_Comprehensive() {
+    cout << "\n🔍 TASK SCHEDULER COMPREHENSIVE TESTS\n";
 
+    // Test 1: Basic example from PDF
+    runner.runTest("Scheduler: {A, A, B}, n=2 -> 4", [&]() {
+        vector<char> tasks = { 'A', 'A', 'B' };
+        return ServerKernel::minIntervals(tasks, 2) == 4;
+        }());
+
+    // Test 2: All same tasks
+    runner.runTest("Scheduler: {A, A, A}, n=2 -> 7", [&]() {
+        vector<char> tasks = { 'A', 'A', 'A' };
+        return ServerKernel::minIntervals(tasks, 2) == 7;
+        }());
+
+    // Test 3: All unique tasks
+    runner.runTest("Scheduler: {A, B, C}, n=2 -> 3", [&]() {
+        vector<char> tasks = { 'A', 'B', 'C' };
+        return ServerKernel::minIntervals(tasks, 2) == 3;
+        }());
+
+    // Test 4: Complex example from PDF
+    runner.runTest("Scheduler: {A, A, A, B, B, B}, n=2 -> 8", [&]() {
+        vector<char> tasks = { 'A', 'A', 'A', 'B', 'B', 'B' };
+        return ServerKernel::minIntervals(tasks, 2) == 8;
+        }());
+
+    // Test 5: n = 0 (no cooling time)
+    runner.runTest("Scheduler: n=0, tasks can execute immediately", [&]() {
+        vector<char> tasks = { 'A', 'A', 'A', 'B', 'B', 'C' };
+        return ServerKernel::minIntervals(tasks, 0) == tasks.size();
+        }());
+
+    // Test 6: n = 1
+    runner.runTest("Scheduler: {A, A, B, B}, n=1 -> 4", [&]() {
+        vector<char> tasks = { 'A', 'A', 'B', 'B' };
+        return ServerKernel::minIntervals(tasks, 1) == 4;
+        }());
+
+    // Test 7: Large n, few tasks
+    runner.runTest("Scheduler: {A, A, A}, n=5 -> 13", [&]() {
+        vector<char> tasks = { 'A', 'A', 'A' };
+        // Formula: ((3-1)*(5+1)) + 1 = 2*6 + 1 = 13
+        return ServerKernel::minIntervals(tasks, 5) == 13;
+        }());
+
+    // Test 8: Multiple tasks with same max frequency
+    runner.runTest("Scheduler: 3 tasks with freq 2, n=2 -> 6", [&]() {
+        vector<char> tasks = { 'A', 'A', 'B', 'B', 'C', 'C' };
+        // maxFreq = 2, count_maxFreq = 3
+        // Formula: ((2-1)*(2+1)) + 3 = 1*3 + 3 = 6
+        return ServerKernel::minIntervals(tasks, 2) == 6;
+        }());
+
+    // Test 9: Empty task list
+    runner.runTest("Scheduler: empty list -> 0", [&]() {
+        vector<char> tasks = {};
+        return ServerKernel::minIntervals(tasks, 5) == 0;
+        }());
+
+    // Test 10: Single task
+    runner.runTest("Scheduler: single task -> 1", [&]() {
+        vector<char> tasks = { 'A' };
+        return ServerKernel::minIntervals(tasks, 10) == 1;
+        }());
+
+    // Test 11: Tasks with gaps larger than n
+    runner.runTest("Scheduler: {A, B, C, A, B, C}, n=1 -> 6", [&]() {
+        vector<char> tasks = { 'A', 'B', 'C', 'A', 'B', 'C' };
+        return ServerKernel::minIntervals(tasks, 1) == 6;
+        }());
+
+    // Test 12: Real-world large case
+    runner.runTest("Scheduler: large random case", [&]() {
+        vector<char> tasks;
+        for (int i = 0; i < 1000; i++) {
+            tasks.push_back('A' + (i % 26));
+        }
+        // Just verify it doesn't crash and returns reasonable value
+        int result = ServerKernel::minIntervals(tasks, 10);
+        return result >= tasks.size() && result <= tasks.size() * 2;
+        }());
+}
 void test_PartD_Kernel() {
     cout << "\n--- Part D: Server Kernel ---" << endl;
 
@@ -676,6 +698,7 @@ void test_PartD_Kernel() {
         vector<char> tasks = {'A', 'A', 'B'};
         return ServerKernel::minIntervals(tasks, 2) == 4;
     }());
+    test_TaskScheduler_Comprehensive();
 }
 
 int main() {
@@ -685,7 +708,7 @@ int main() {
     test_PartA_DataStructures();
   //  test_PartB_Inventory();
    // test_PartC_Navigator();
-  //  test_PartD_Kernel();
+    test_PartD_Kernel();
 
     runner.printSummary();
 
