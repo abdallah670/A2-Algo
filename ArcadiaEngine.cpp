@@ -671,29 +671,161 @@ long long InventorySystem::countStringPossibilities(string s) {
 // PART C: WORLD NAVIGATOR (Graphs)
 // =========================================================
 
-bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
-    // TODO: Implement path existence check using BFS or DFS
-    // edges are bidirectional
+bool SafePassage(int n, const std::vector<std::pair<int, int>>& edges, int source, int dest) {
+    // n = number of cities
+    // edges = list of bidirectional roads
+    // source = start city
+    // dest = end city
+    std::vector<std::vector<int>> List(n);
+    for (const auto& edge : edges) {
+        int u = edge.first;
+        int v = edge.second;
+        
+        List[u].push_back(v);
+        List[v].push_back(u);
+    }
+    std::queue<int> q;
+    q.push(source);
+    std::vector<bool> visited(n, false);
+    visited[source] = true;
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        if (u == dest) {
+            return true;
+        }
+        for (int v : List[u]) {
+            if (!visited[v]) {
+                visited[v] = true;
+                q.push(v);
+            }
+        }
+    }
     return false;
 }
 
-long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long long silverRate,
-    vector<vector<int>>& roadData) {
-    // TODO: Implement Minimum Spanning Tree (Kruskal's or Prim's)
-    // roadData[i] = {u, v, goldCost, silverCost}
-    // Total cost = goldCost * goldRate + silverCost * silverRate
-    // Return -1 if graph cannot be fully connected
-    return -1;
+struct DSU {
+    std::vector<int> parent;
+    std::vector<int> rank;
+
+    DSU(int n) {
+        parent.resize(n);
+        std::iota(parent.begin(), parent.end(), 0); 
+        rank.assign(n, 0); 
+    }
+
+    int Find(int i) {
+        if (parent[i] == i)
+            return i;
+        return parent[i] = Find(parent[i]);
+    }
+
+    bool Union(int i, int j) {
+        int root_i = Find(i);
+        int root_j = Find(j);
+
+        if (root_i != root_j) {
+            if (rank[root_i] < rank[root_j]) {
+                parent[root_i] = root_j;
+            } else if (rank[root_i] > rank[root_j]) {
+                parent[root_j] = root_i;
+            } else {
+                parent[root_j] = root_i;
+                rank[root_i]++;
+            }
+            return true;
+        }
+        return false; 
+    }
+};
+struct Edge {
+    long long cost;
+    int u, v;
+    bool operator<(const Edge& other) const {
+        return cost < other.cost;
+    }
+};
+//to connect all cities with minimum cost
+long long MBC(int n, const std::vector<std::tuple<int, int, int, int>>& roads, int goldRate, int silverRate) {
+    std::vector<Edge> edges;
+    
+    for (const auto& road : roads) {
+        int u, v, gold, silver;
+        u = std::get<0>(road);
+        v = std::get<1>(road);
+        gold = std::get<2>(road);
+        silver = std::get<3>(road);
+        long long cost = (long long)gold * goldRate + (long long)silver * silverRate;
+        edges.push_back({cost, u, v});
+    }
+
+    std::sort(edges.begin(), edges.end());
+
+    DSU dsu(n);
+    long long MstCost = 0;
+    int edgesCount = 0;
+    
+    for (const auto& edge : edges) {
+        if (edgesCount == n - 1)
+            break;
+
+        if (dsu.Union(edge.u, edge.v)) {
+            MstCost += edge.cost;
+            edgesCount++;
+        }
+    }
+    
+    return MstCost;
 }
 
-string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
-    // TODO: Implement All-Pairs Shortest Path (Floyd-Warshall)
-    // Sum all shortest distances between unique pairs (i < j)
-    // Return the sum as a binary string
-    // Hint: Handle large numbers carefully
-    return "0";
-}
+std::string shortestPath(int n, const std::vector<std::tuple<int, int, int>>& roads) {
+    // n = number of cities
+    // roads = list of bidirectional roads with lengths
+    // infinity  = a large number representing infinity
+    const long long infinity = 1e15;
+    std::vector<std::vector<long long>> dist(n, std::vector<long long>(n, infinity));
 
+    for (int i = 0; i < n; ++i) {
+        dist[i][i] = 0;
+    }
+
+    for (const auto& road : roads) {
+        int u = std::get<0>(road);
+        int v = std::get<1>(road);
+        int length = std::get<2>(road);
+
+        dist[u][v] = std::min(dist[u][v], (long long)length);
+        dist[v][u] = std::min(dist[v][u], (long long)length);
+    }
+    
+    for (int k = 0; k < n; ++k) {
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (dist[i][k] != infinity && dist[k][j] != infinity) {
+                    dist[i][j] = std::min(dist[i][j], dist[i][k] + dist[k][j]);
+                }
+            }
+        }
+    }
+    long long totalSum = 0;
+    for (int i = 0; i < n; ++i) {
+        for (int j = i + 1; j < n; ++j) {
+            if (dist[i][j] != infinity) {
+                totalSum += dist[i][j];
+            }
+        }
+    }
+    std::string result = "";
+    if (totalSum == 0) return "0";
+
+    while (totalSum > 0) {
+        result = (totalSum % 2 == 0 ? "0" : "1") + result;
+        totalSum /= 2;
+    }
+    return result;
+}
 // =========================================================
 // PART D: SERVER KERNEL (Greedy)
 // =========================================================
