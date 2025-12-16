@@ -757,10 +757,8 @@ struct DSU {
 
 
     bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
-        // Fix: Use vector of vectors for adjacency list
         std::vector<std::vector<int>> List(n);
         for (const auto& edge : edges) {
-            // Fix: Access vector elements by index, not .first/.second
             int u = edge[0];
             int v = edge[1];
 
@@ -793,7 +791,6 @@ struct DSU {
         std::vector<Edge> edges;
 
         for (const auto& road : roads) {
-            // Fix: Access vector elements by index
             int u = road[0];
             int v = road[1];
             int gold = road[2];
@@ -818,9 +815,6 @@ struct DSU {
                 edgesCount++;
             }
         }
-
-        // Optional: Check if graph is connected. If edgesCount < n-1, MST is impossible.
-        // Usually returns -1 in such cases, but keeping your original return logic:
         return MstCost;
     }
 
@@ -833,7 +827,6 @@ struct DSU {
         }
 
         for (const auto& road : roads) {
-            // Fix: Access vector elements by index, not std::get
             int u = road[0];
             int v = road[1];
             int length = road[2];
@@ -842,7 +835,6 @@ struct DSU {
             dist[v][u] = std::min(dist[v][u], (long long)length);
         }
 
-        // Floyd-Warshall Algorithm
         for (int k = 0; k < n; ++k) {
             for (int i = 0; i < n; ++i) {
                 for (int j = 0; j < n; ++j) {
