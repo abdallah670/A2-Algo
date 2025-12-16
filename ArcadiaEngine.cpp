@@ -710,49 +710,14 @@ long long InventorySystem::countStringPossibilities(string s) {
 // =========================================================
 // PART C: WORLD NAVIGATOR (Graphs)
 // =========================================================
-
-bool SafePassage(int n, const std::vector<std::pair<int, int>>& edges, int source, int dest) {
-    // n = number of cities
-    // edges = list of bidirectional roads
-    // source = start city
-    // dest = end city
-    std::vector<std::vector<int>> List(n);
-    for (const auto& edge : edges) {
-        int u = edge.first;
-        int v = edge.second;
-        
-        List[u].push_back(v);
-        List[v].push_back(u);
-    }
-    std::queue<int> q;
-    q.push(source);
-    std::vector<bool> visited(n, false);
-    visited[source] = true;
-
-    while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-
-        if (u == dest) {
-            return true;
-        }
-        for (int v : List[u]) {
-            if (!visited[v]) {
-                visited[v] = true;
-                q.push(v);
-            }
-        }
-    }
-    return false;
-}
-
+// Supporting minBribeCost
 struct DSU {
-    std::vector<int> parent;
-    std::vector<int> rank;
+    vector<int> parent;
+    vector<int> rank;
 
     DSU(int n) {
         parent.resize(n);
-        std::iota(parent.begin(), parent.end(), 0); 
+        iota(parent.begin(), parent.end(), 0); 
         rank.assign(n, 0); 
     }
 
@@ -780,6 +745,8 @@ struct DSU {
         return false; 
     }
 };
+
+//supporting minBribeCost 
 struct Edge {
     long long cost;
     int u, v;
@@ -787,85 +754,125 @@ struct Edge {
         return cost < other.cost;
     }
 };
-//to connect all cities with minimum cost
-long long MBC(int n, const std::vector<std::tuple<int, int, int, int>>& roads, int goldRate, int silverRate) {
-    std::vector<Edge> edges;
-    
-    for (const auto& road : roads) {
-        int u, v, gold, silver;
-        u = std::get<0>(road);
-        v = std::get<1>(road);
-        gold = std::get<2>(road);
-        silver = std::get<3>(road);
-        long long cost = (long long)gold * goldRate + (long long)silver * silverRate;
-        edges.push_back({cost, u, v});
-    }
 
-    std::sort(edges.begin(), edges.end());
-
-    DSU dsu(n);
-    long long MstCost = 0;
-    int edgesCount = 0;
-    
-    for (const auto& edge : edges) {
-        if (edgesCount == n - 1)
-            break;
-
-        if (dsu.Union(edge.u, edge.v)) {
-            MstCost += edge.cost;
-            edgesCount++;
+class WorldNavigator {
+public:
+    static bool pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
+        vector<vector<int>> adjList(n);
+        for (const auto& edge : edges) {
+            int u = edge[0]; 
+            int v = edge[1];
+            
+            adjList[u].push_back(v);
+            adjList[v].push_back(u); 
         }
-    }
-    
-    return MstCost;
-}
+        
+        queue<int> q;
+        q.push(source);
+        vector<bool> visited(n, false);
+        visited[source] = true;
+        
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
 
-std::string shortestPath(int n, const std::vector<std::tuple<int, int, int>>& roads) {
-    // n = number of cities
-    // roads = list of bidirectional roads with lengths
-    // infinity  = a large number representing infinity
-    const long long infinity = 1e15;
-    std::vector<std::vector<long long>> dist(n, std::vector<long long>(n, infinity));
-
-    for (int i = 0; i < n; ++i) {
-        dist[i][i] = 0;
-    }
-
-    for (const auto& road : roads) {
-        int u = std::get<0>(road);
-        int v = std::get<1>(road);
-        int length = std::get<2>(road);
-
-        dist[u][v] = std::min(dist[u][v], (long long)length);
-        dist[v][u] = std::min(dist[v][u], (long long)length);
-    }
-    
-    for (int k = 0; k < n; ++k) {
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j) {
-                if (dist[i][k] != infinity && dist[k][j] != infinity) {
-                    dist[i][j] = std::min(dist[i][j], dist[i][k] + dist[k][j]);
+            if (u == dest) {
+                return true; 
+            }
+            
+            for (int v : adjList[u]) {
+                if (!visited[v]) {
+                    visited[v] = true;
+                    q.push(v);
                 }
             }
         }
+        return false; 
     }
-    long long totalSum = 0;
-    for (int i = 0; i < n; ++i) {
-        for (int j = i + 1; j < n; ++j) {
-            if (dist[i][j] != infinity) {
-                totalSum += dist[i][j];
+
+    static long long minBribeCost(int n, int m, long long goldRate, long long silverRate, vector<vector<int>>& roadData) {
+        vector<Edge> edges;
+        
+        for (const auto& road : roadData) {
+            int u = road[0];
+            int v = road[1];
+            int gold = road[2];
+            int silver = road[3];
+            
+            long long cost = gold * goldRate + silver * silverRate;
+            edges.push_back({cost, u, v});
+        }
+        sort(edges.begin(), edges.end());
+
+        DSU dsu(n);
+        long long MstCost = 0;
+        int edgesCount = 0; 
+        
+        
+        for (const auto& edge : edges) {
+            if (edgesCount == n - 1)
+                break;
+
+            if (dsu.Union(edge.u, edge.v)) {
+                MstCost += edge.cost;
+                edgesCount++;
             }
         }
+        
+        if (edgesCount == n - 1) {
+            return MstCost;
+        } else {
+            return -1; 
+        }
     }
-    std::string result = "";
-    if (totalSum == 0) return "0";
 
-    while (totalSum > 0) {
-        result = (totalSum % 2 == 0 ? "0" : "1") + result;
-        totalSum /= 2;
+    static string sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
+        const long long infinity = 1e15; 
+        vector<vector<long long>> dist(n, vector<long long>(n, infinity));
+
+        for (int i = 0; i < n; ++i) {
+            dist[i][i] = 0; 
+        }
+
+        for (const auto& road : roads) {
+            int u = road[0];
+            int v = road[1];
+            long long length = road[2];
+
+            dist[u][v] = min(dist[u][v], length);
+            dist[v][u] = min(dist[v][u], length);
+        }
+        
+        
+        for (int k = 0; k < n; ++k) { 
+            for (int i = 0; i < n; ++i) { 
+                for (int j = 0; j < n; ++j) { 
+                    if (dist[i][k] != infinity && dist[k][j] != infinity) {
+                        dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j]);
+                    }
+                }
+            }
+        }
+        
+        long long totalSum = 0;
+        for (int i = 0; i < n; ++i) {
+            for (int j = i + 1; j < n; ++j) { 
+                if (dist[i][j] != infinity) {
+                    totalSum += dist[i][j];
+                }
+            }
+        }
+        
+        if (totalSum == 0) return "0";
+        string result = "";
+        long long tempSum = totalSum;
+        while (tempSum > 0) {
+            result = (tempSum % 2 == 0 ? "0" : "1") + result;
+            tempSum /= 2;
+        }
+        return result;
     }
-    return result;
-}
+};
 // =========================================================
 // PART D: SERVER KERNEL (Greedy)
 // =========================================================
