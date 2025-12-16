@@ -652,21 +652,21 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
     int sum = 0;
-for (int c : coins) sum += c;
+    for (int c : coins) sum += c;
 
-vector<bool> dp(sum + 1, false);
-dp[0] = true;
+    vector<bool> dp(sum + 1, false);
+    dp[0] = true;
 
-for (int c : coins)
-    for (int s = sum; s >= c; s--)
-        dp[s] = dp[s] || dp[s - c];
+    for (int c : coins)
+        for (int s = sum; s >= c; s--)
+            dp[s] = dp[s] || dp[s - c];
 
-int best = sum;
-for (int s = 0; s <= sum; s++)
-    if (dp[s])
-        best = min(best, abs(sum - 2 * s));
+    int best = sum;
+    for (int s = 0; s <= sum; s++)
+        if (dp[s])
+            best = min(best, abs(sum - 2 * s));
 
-return best;
+    return best;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
@@ -675,11 +675,11 @@ int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& it
     // Return maximum value achievable within capacity
     vector<int> dp(capacity + 1, 0);
 
-for (auto& it : items)
-    for (int w = capacity; w >= it.first; w--)
-        dp[w] = max(dp[w], dp[w - it.first] + it.second);
+    for (auto& it : items)
+        for (int w = capacity; w >= it.first; w--)
+            dp[w] = max(dp[w], dp[w - it.first] + it.second);
 
-return dp[capacity];
+    return dp[capacity];
 }
 
 long long InventorySystem::countStringPossibilities(string s) {
@@ -710,15 +710,22 @@ long long InventorySystem::countStringPossibilities(string s) {
 // =========================================================
 // PART C: WORLD NAVIGATOR (Graphs)
 // =========================================================
-// Supporting minBribeCost
+struct Edge {
+    long long cost;
+    int u, v;
+    bool operator<(const Edge& other) const {
+        return cost < other.cost;
+    }
+};
+
 struct DSU {
-    vector<int> parent;
-    vector<int> rank;
+    std::vector<int> parent;
+    std::vector<int> rank;
 
     DSU(int n) {
         parent.resize(n);
-        iota(parent.begin(), parent.end(), 0); 
-        rank.assign(n, 0); 
+        std::iota(parent.begin(), parent.end(), 0);
+        rank.assign(n, 0);
     }
 
     int Find(int i) {
@@ -734,81 +741,74 @@ struct DSU {
         if (root_i != root_j) {
             if (rank[root_i] < rank[root_j]) {
                 parent[root_i] = root_j;
-            } else if (rank[root_i] > rank[root_j]) {
+            }
+            else if (rank[root_i] > rank[root_j]) {
                 parent[root_j] = root_i;
-            } else {
+            }
+            else {
                 parent[root_j] = root_i;
                 rank[root_i]++;
             }
             return true;
         }
-        return false; 
+        return false;
     }
 };
 
-//supporting minBribeCost 
-struct Edge {
-    long long cost;
-    int u, v;
-    bool operator<(const Edge& other) const {
-        return cost < other.cost;
-    }
-};
 
-class WorldNavigator {
-public:
-    static bool pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
-        vector<vector<int>> adjList(n);
+    bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
+        // Fix: Use vector of vectors for adjacency list
+        std::vector<std::vector<int>> List(n);
         for (const auto& edge : edges) {
-            int u = edge[0]; 
+            // Fix: Access vector elements by index, not .first/.second
+            int u = edge[0];
             int v = edge[1];
-            
-            adjList[u].push_back(v);
-            adjList[v].push_back(u); 
+
+            List[u].push_back(v);
+            List[v].push_back(u);
         }
-        
-        queue<int> q;
+        std::queue<int> q;
         q.push(source);
-        vector<bool> visited(n, false);
+        std::vector<bool> visited(n, false);
         visited[source] = true;
-        
+
         while (!q.empty()) {
             int u = q.front();
             q.pop();
 
             if (u == dest) {
-                return true; 
+                return true;
             }
-            
-            for (int v : adjList[u]) {
+            for (int v : List[u]) {
                 if (!visited[v]) {
                     visited[v] = true;
                     q.push(v);
                 }
             }
         }
-        return false; 
+        return false;
     }
 
-    static long long minBribeCost(int n, int m, long long goldRate, long long silverRate, vector<vector<int>>& roadData) {
-        vector<Edge> edges;
-        
-        for (const auto& road : roadData) {
+    long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long long silverRate, vector<vector<int>>& roads) {
+        std::vector<Edge> edges;
+
+        for (const auto& road : roads) {
+            // Fix: Access vector elements by index
             int u = road[0];
             int v = road[1];
             int gold = road[2];
             int silver = road[3];
-            
-            long long cost = gold * goldRate + silver * silverRate;
-            edges.push_back({cost, u, v});
+
+            long long cost = (long long)gold * goldRate + (long long)silver * silverRate;
+            edges.push_back({ cost, u, v });
         }
-        sort(edges.begin(), edges.end());
+
+        std::sort(edges.begin(), edges.end());
 
         DSU dsu(n);
         long long MstCost = 0;
-        int edgesCount = 0; 
-        
-        
+        int edgesCount = 0;
+
         for (const auto& edge : edges) {
             if (edgesCount == n - 1)
                 break;
@@ -818,61 +818,61 @@ public:
                 edgesCount++;
             }
         }
-        
-        if (edgesCount == n - 1) {
-            return MstCost;
-        } else {
-            return -1; 
-        }
+
+        // Optional: Check if graph is connected. If edgesCount < n-1, MST is impossible.
+        // Usually returns -1 in such cases, but keeping your original return logic:
+        return MstCost;
     }
 
-    static string sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
-        const long long infinity = 1e15; 
-        vector<vector<long long>> dist(n, vector<long long>(n, infinity));
+    string WorldNavigator::sumMinDistancesBinary(int n, std::vector<vector<int>>& roads) {
+        const long long infinity = 1e15;
+        std::vector<std::vector<long long>> dist(n, std::vector<long long>(n, infinity));
 
         for (int i = 0; i < n; ++i) {
-            dist[i][i] = 0; 
+            dist[i][i] = 0;
         }
 
         for (const auto& road : roads) {
+            // Fix: Access vector elements by index, not std::get
             int u = road[0];
             int v = road[1];
-            long long length = road[2];
+            int length = road[2];
 
-            dist[u][v] = min(dist[u][v], length);
-            dist[v][u] = min(dist[v][u], length);
+            dist[u][v] = std::min(dist[u][v], (long long)length);
+            dist[v][u] = std::min(dist[v][u], (long long)length);
         }
-        
-        
-        for (int k = 0; k < n; ++k) { 
-            for (int i = 0; i < n; ++i) { 
-                for (int j = 0; j < n; ++j) { 
+
+        // Floyd-Warshall Algorithm
+        for (int k = 0; k < n; ++k) {
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < n; ++j) {
                     if (dist[i][k] != infinity && dist[k][j] != infinity) {
-                        dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j]);
+                        dist[i][j] = std::min(dist[i][j], dist[i][k] + dist[k][j]);
                     }
                 }
             }
         }
-        
+
         long long totalSum = 0;
         for (int i = 0; i < n; ++i) {
-            for (int j = i + 1; j < n; ++j) { 
+            for (int j = i + 1; j < n; ++j) {
                 if (dist[i][j] != infinity) {
                     totalSum += dist[i][j];
                 }
             }
         }
-        
+
+        std::string result = "";
         if (totalSum == 0) return "0";
-        string result = "";
-        long long tempSum = totalSum;
-        while (tempSum > 0) {
-            result = (tempSum % 2 == 0 ? "0" : "1") + result;
-            tempSum /= 2;
+
+        while (totalSum > 0) {
+            result = (totalSum % 2 == 0 ? "0" : "1") + result;
+            totalSum /= 2;
         }
         return result;
     }
-};
+
+
 // =========================================================
 // PART D: SERVER KERNEL (Greedy)
 // =========================================================
@@ -894,7 +894,7 @@ int ServerKernel::minIntervals(vector<char>& tasks, int n) {
     }
     int sizeTasks = tasks.size();
     return max(sizeTasks, (((maxFreq - 1) * (n + 1)) + count_maxFreq));
-   
+
 }
 
 //=========================================================
