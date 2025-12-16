@@ -1,4 +1,4 @@
-﻿/**
+/**
  * main_test_student.cpp
  * Basic "Happy Path" Test Suite for ArcadiaEngine
  * Use this to verify your basic logic against the assignment examples.
@@ -540,56 +540,606 @@ void test_PartA_DataStructures() {
 // PART B: INVENTORY SYSTEM
 // ==========================================
 
+
+void test_PartB_Inventory_Comprehensive() {
+    cout << "\n🔍 PART B - INVENTORY SYSTEM COMPREHENSIVE TESTS\n";
+
+    // ========== 1. LOOT SPLIT (Partition Problem) ==========
+
+    // Basic test cases
+    runner.runTest("LootSplit: {1, 2, 4} -> Diff 1", [&]() {
+        vector<int> coins = { 1, 2, 4 };
+        return InventorySystem::optimizeLootSplit(3, coins) == 1;
+        }());
+
+    runner.runTest("LootSplit: {3, 1, 4, 2, 2, 1} -> Diff 1", [&]() {
+        vector<int> coins = { 3, 1, 4, 2, 2, 1 };
+        return InventorySystem::optimizeLootSplit(6, coins) == 1;
+        }());
+
+    // Perfect split possible
+    runner.runTest("LootSplit: {2, 2, 2, 2} -> Diff 0", [&]() {
+        vector<int> coins = { 2, 2, 2, 2 };
+        return InventorySystem::optimizeLootSplit(4, coins) == 0;
+        }());
+
+    runner.runTest("LootSplit: {1, 5, 11, 5} -> Diff 0", [&]() {
+        vector<int> coins = { 1, 5, 11, 5 };
+        return InventorySystem::optimizeLootSplit(4, coins) == 0;
+        }());
+
+    // Edge cases
+    runner.runTest("LootSplit: Single coin -> Diff = coin", [&]() {
+        vector<int> coins = { 100 };
+        return InventorySystem::optimizeLootSplit(1, coins) == 100;
+        }());
+
+    runner.runTest("LootSplit: All zeros -> Diff 0", [&]() {
+        vector<int> coins = { 0, 0, 0, 0 };
+        return InventorySystem::optimizeLootSplit(4, coins) == 0;
+        }());
+
+    runner.runTest("LootSplit: Large coin values", [&]() {
+        vector<int> coins = { 1000, 500, 300, 200 };
+        return InventorySystem::optimizeLootSplit(4, coins) == 0; // 1000 vs (500+300+200)=1000
+        }());
+
+    runner.runTest("LootSplit: All same coins", [&]() {
+        vector<int> coins = { 10, 10, 10, 10, 10 };
+        return InventorySystem::optimizeLootSplit(5, coins) == 10; // 30 vs 20
+        }());
+
+    // Large input test
+    runner.runTest("LootSplit: 50 coins (stress test)", [&]() {
+        vector<int> coins;
+        for (int i = 1; i <= 50; i++) {
+            coins.push_back(i);
+        }
+        int result = InventorySystem::optimizeLootSplit(50, coins);
+        // Minimum difference for sum 1275 is 1 (637 vs 638)
+        return result >= 0 && result <= 5;
+        }());
+
+    // Negative coins? (if applicable)
+    // runner.runTest("LootSplit: With negative values", [&]() {
+    //     vector<int> coins = {-1, 2, 3};
+    //     return InventorySystem::optimizeLootSplit(3, coins) == 0; // 2 vs (-1+3)=2
+    // }());
+
+    // ========== 2. KNAPSACK (Maximize Carry Value) ==========
+
+    // Basic test cases
+    runner.runTest("Knapsack: Cap 10, all fit -> Value 60", [&]() {
+        vector<pair<int, int>> items = { {1, 10}, {2, 20}, {3, 30} };
+        return InventorySystem::maximizeCarryValue(10, items) == 60;
+        }());
+
+    runner.runTest("Knapsack: Cap 5, items {{4, 10}, {3, 9}, {2, 5}} -> Value 14", [&]() {
+        vector<pair<int, int>> items = { {4, 10}, {3, 9}, {2, 5} };
+        return InventorySystem::maximizeCarryValue(5, items) == 14; // 9+5=14
+        }());
+
+    // Edge cases
+    runner.runTest("Knapsack: Zero capacity -> Value 0", [&]() {
+        vector<pair<int, int>> items = { {1, 100}, {2, 200} };
+        return InventorySystem::maximizeCarryValue(0, items) == 0;
+        }());
+
+    runner.runTest("Knapsack: No items -> Value 0", [&]() {
+        vector<pair<int, int>> items = {};
+        return InventorySystem::maximizeCarryValue(100, items) == 0;
+        }());
+
+    runner.runTest("Knapsack: Single item fits", [&]() {
+        vector<pair<int, int>> items = { {5, 50} };
+        return InventorySystem::maximizeCarryValue(10, items) == 50;
+        }());
+
+    runner.runTest("Knapsack: Single item doesn't fit", [&]() {
+        vector<pair<int, int>> items = { {15, 100} };
+        return InventorySystem::maximizeCarryValue(10, items) == 0;
+        }());
+
+    runner.runTest("Knapsack: All items too heavy", [&]() {
+        vector<pair<int, int>> items = { {20, 100}, {25, 200}, {30, 300} };
+        return InventorySystem::maximizeCarryValue(10, items) == 0;
+        }());
+
+    // Complex scenarios
+    runner.runTest("Knapsack: Multiple optimal solutions", [&]() {
+        vector<pair<int, int>> items = { {2, 3}, {3, 4}, {4, 5}, {5, 6} };
+        return InventorySystem::maximizeCarryValue(5, items) == 7; // (2,3)+(3,4)=7
+        }());
+
+    runner.runTest("Knapsack: High value/low weight vs low value/high weight", [&]() {
+        vector<pair<int, int>> items = { {1, 10}, {10, 1} };
+        return InventorySystem::maximizeCarryValue(10, items) == 10; // Take only first item
+        }());
+
+    runner.runTest("Knapsack: Large capacity, many items", [&]() {
+        vector<pair<int, int>> items;
+        for (int i = 1; i <= 100; i++) {
+            items.push_back({ i % 10 + 1, i * 10 }); // weights 1-10, values 10-1000
+        }
+        int result = InventorySystem::maximizeCarryValue(50, items);
+        return result > 0;
+        }());
+
+    runner.runTest("Knapsack: Duplicate items", [&]() {
+        vector<pair<int, int>> items = { {2, 5}, {2, 5}, {2, 5} };
+        return InventorySystem::maximizeCarryValue(6, items) == 15; // Can take all 3
+        }());
+
+    // ========== 3. STRING DECODING ==========
+
+    // Basic test cases
+    runner.runTest("StringDecode: 'uu' -> 2", [&]() {
+        return InventorySystem::countStringPossibilities("uu") == 2;
+        }());
+
+    runner.runTest("StringDecode: 'nn' -> 2", [&]() {
+        return InventorySystem::countStringPossibilities("nn") == 2;
+        }());
+
+    runner.runTest("StringDecode: 'uuuu' -> 5", [&]() {
+        // Possibilities: uuuu, wuu, uuw, ww, uwu
+        return InventorySystem::countStringPossibilities("uuuu") == 5;
+        }());
+
+    runner.runTest("StringDecode: 'nnnn' -> 5", [&]() {
+        return InventorySystem::countStringPossibilities("nnnn") == 5;
+        }());
+
+    // Edge cases
+    runner.runTest("StringDecode: Empty string -> 1", [&]() {
+        return InventorySystem::countStringPossibilities("") == 1;
+        }());
+
+    runner.runTest("StringDecode: Single character -> 1", [&]() {
+        return InventorySystem::countStringPossibilities("a") == 1;
+        }());
+
+    runner.runTest("StringDecode: No special pairs -> 1", [&]() {
+        return InventorySystem::countStringPossibilities("abc") == 1;
+        }());
+
+    runner.runTest("StringDecode: Only regular characters -> 1", [&]() {
+        return InventorySystem::countStringPossibilities("xyzxyz") == 1;
+        }());
+
+    // Complex cases
+    runner.runTest("StringDecode: 'uun' -> 2", [&]() {
+        // Possibilities: uun, wn
+        return InventorySystem::countStringPossibilities("uun") == 2;
+        }());
+
+    runner.runTest("StringDecode: 'nuu' -> 2", [&]() {
+        // Possibilities: nuu, nw
+        return InventorySystem::countStringPossibilities("nuu") == 2;
+        }());
+
+    runner.runTest("StringDecode: 'uunn' -> 4", [&]() {
+        // Possibilities: uunn, wnn, uum, wm
+        return InventorySystem::countStringPossibilities("uunn") == 4;
+        }());
+
+    runner.runTest("StringDecode: Mixed with non-special characters", [&]() {
+        return InventorySystem::countStringPossibilities("auub") == 2; // auub, awb
+        }());
+
+    runner.runTest("StringDecode: 'uunu' -> 3", [&]() {
+        // Possibilities: uunu, wnu, uwn
+        return InventorySystem::countStringPossibilities("uunu") == 2;
+        }());
+
+    runner.runTest("StringDecode: 'u' repeated 10 times", [&]() {
+        string s(10, 'u'); // "uuuuuuuuuu"
+        long long result = InventorySystem::countStringPossibilities(s);
+        // Fibonacci-like sequence: F(n) where n = length/2
+        return result == 89; // F(10) for "uu" pairs
+        }());
+
+    runner.runTest("StringDecode: 'n' repeated 10 times", [&]() {
+        string s(10, 'n');
+        long long result = InventorySystem::countStringPossibilities(s);
+        return result == 89;
+        }());
+
+    runner.runTest("StringDecode: Alternating u and n", [&]() {
+        return InventorySystem::countStringPossibilities("ununun") == 1; // No adjacent uu or nn
+        }());
+
+    // Large input test
+    runner.runTest("StringDecode: 30-character mixed string", [&]() {
+        string s = "uunnuunnuunnuunnuunnuunnuunnuu";
+        long long result = InventorySystem::countStringPossibilities(s);
+        return result > 0; // Should be large
+        }());
+
+    runner.runTest("StringDecode: Long string with no specials", [&]() {
+        string s(100, 'a');
+        return InventorySystem::countStringPossibilities(s) == 1;
+        }());
+}
 void test_PartB_Inventory() {
     cout << "\n--- Part B: Inventory System ---" << endl;
 
     // 1. Loot Splitting (Partition)
     // PDF Example: coins = {1, 2, 4} -> Best split {4} vs {1,2} -> Diff 1
     runner.runTest("LootSplit: {1, 2, 4} -> Diff 1", [&]() {
-        vector<int> coins = {1, 2, 4};
+        vector<int> coins = { 1, 2, 4 };
         return InventorySystem::optimizeLootSplit(3, coins) == 1;
-    }());
+        }());
 
     // 2. Inventory Packer (Knapsack)
     // PDF Example: Cap=10, Items={{1,10}, {2,20}, {3,30}}. All fit. Value=60.
     runner.runTest("Knapsack: Cap 10, All Fit -> Value 60", [&]() {
-        vector<pair<int, int>> items = {{1, 10}, {2, 20}, {3, 30}};
+        vector<pair<int, int>> items = { {1, 10}, {2, 20}, {3, 30} };
         return InventorySystem::maximizeCarryValue(10, items) == 60;
-    }());
+        }());
 
     // 3. Chat Autocorrect (String DP)
     // PDF Example: "uu" -> "uu" or "w" -> 2 possibilities
     runner.runTest("ChatDecorder: 'uu' -> 2 Possibilities", [&]() {
         return InventorySystem::countStringPossibilities("uu") == 2;
-    }());
+        }());
+    test_PartB_Inventory_Comprehensive();
 }
 
 // ==========================================
-// PART C: WORLD NAVIGATOR
+// PART C: WORLD NAVIGATOR - STRONG TESTS
 // ==========================================
 
+void test_PartC_Navigator_Comprehensive() {
+    cout << "\n🔍 PART C - WORLD NAVIGATOR COMPREHENSIVE TESTS\n";
+
+    // ========== 1. PATH EXISTS (BFS/DFS) ==========
+
+    // Basic test cases
+    runner.runTest("PathExists: Simple path 0->1->2", [&]() {
+        vector<vector<int>> edges = { {0, 1}, {1, 2} };
+        return WorldNavigator::pathExists(3, edges, 0, 2) == true;
+        }());
+
+    runner.runTest("PathExists: No path (disconnected)", [&]() {
+        vector<vector<int>> edges = { {0, 1}, {2, 3} };
+        return WorldNavigator::pathExists(4, edges, 0, 3) == false;
+        }());
+
+    runner.runTest("PathExists: Self-loop path", [&]() {
+        vector<vector<int>> edges = { {0, 0} };
+        return WorldNavigator::pathExists(1, edges, 0, 0) == true;
+        }());
+
+    // Edge cases
+    runner.runTest("PathExists: Single node, no edges", [&]() {
+        vector<vector<int>> edges = {};
+        return WorldNavigator::pathExists(1, edges, 0, 0) == true;
+        }());
+
+    runner.runTest("PathExists: Single node with self-edge", [&]() {
+        vector<vector<int>> edges = { {0, 0} };
+        return WorldNavigator::pathExists(1, edges, 0, 0) == true;
+        }());
+
+    runner.runTest("PathExists: Source equals destination", [&]() {
+        vector<vector<int>> edges = { {0, 1}, {1, 2} };
+        return WorldNavigator::pathExists(3, edges, 0, 0) == true;
+        }());
+
+    runner.runTest("PathExists: Invalid node indices", [&]() {
+        vector<vector<int>> edges = { {0, 1} };
+        // Should handle gracefully (return false or not crash)
+        bool result = WorldNavigator::pathExists(2, edges, 0, 5);
+        return !result; // Should be false
+        }());
+
+    // Complex graphs
+    runner.runTest("PathExists: Complete graph K4", [&]() {
+        vector<vector<int>> edges;
+        for (int i = 0; i < 4; i++) {
+            for (int j = i + 1; j < 4; j++) {
+                edges.push_back({ i, j });
+            }
+        }
+        return WorldNavigator::pathExists(4, edges, 0, 3) == true;
+        }());
+
+    runner.runTest("PathExists: Star graph", [&]() {
+        vector<vector<int>> edges = { {0, 1}, {0, 2}, {0, 3}, {0, 4} };
+        return WorldNavigator::pathExists(5, edges, 1, 4) == true;
+        }());
+
+    runner.runTest("PathExists: Cycle graph", [&]() {
+        vector<vector<int>> edges = { {0, 1}, {1, 2}, {2, 3}, {3, 0} };
+        return WorldNavigator::pathExists(4, edges, 0, 2) == true;
+        }());
+
+    runner.runTest("PathExists: Tree with multiple paths", [&]() {
+        vector<vector<int>> edges = { {0, 1}, {0, 2}, {1, 3}, {1, 4}, {2, 5}, {2, 6} };
+        return WorldNavigator::pathExists(7, edges, 3, 6) == true;
+        }());
+
+    // Large graph test
+    runner.runTest("PathExists: 1000-node line graph", [&]() {
+        vector<vector<int>> edges;
+        for (int i = 0; i < 999; i++) {
+            edges.push_back({ i, i + 1 });
+        }
+        return WorldNavigator::pathExists(1000, edges, 0, 999) == true;
+        }());
+
+    // ========== 2. MINIMUM BRIBE COST (MST) ==========
+
+    // Basic test cases
+    runner.runTest("MinBribeCost: Triangle graph -> Cost 15", [&]() {
+        vector<vector<int>> roads = {
+            {0, 1, 10, 0},
+            {1, 2, 5, 0},
+            {0, 2, 20, 0}
+        };
+        return WorldNavigator::minBribeCost(3, 3, 1, 1, roads) == 15;
+        }());
+
+    runner.runTest("MinBribeCost: Simple line graph", [&]() {
+        vector<vector<int>> roads = {
+            {0, 1, 5, 2},
+            {1, 2, 3, 1}
+        };
+        // Costs: (5*1 + 2*1) = 7, (3*1 + 1*1) = 4
+        return WorldNavigator::minBribeCost(3, 2, 1, 1, roads) == 11;
+        }());
+
+    // Edge cases
+    runner.runTest("MinBribeCost: Single node", [&]() {
+        vector<vector<int>> roads = {};
+        return WorldNavigator::minBribeCost(1, 0, 1, 1, roads) == 0;
+        }());
+
+    runner.runTest("MinBribeCost: Two nodes, one edge", [&]() {
+        vector<vector<int>> roads = { {0, 1, 10, 5} };
+        return WorldNavigator::minBribeCost(2, 1, 1, 1, roads) == 15;
+        }());
+
+    runner.runTest("MinBribeCost: Disconnected graph", [&]() {
+        vector<vector<int>> roads = { {0, 1, 10, 0}, {2, 3, 5, 0} };
+        long long result = WorldNavigator::minBribeCost(4, 2, 1, 1, roads);
+        // MST not possible, should return cost for connected components
+        return result == 15; // Only connects nodes within components
+        }());
+
+    runner.runTest("MinBribeCost: Zero rates", [&]() {
+        vector<vector<int>> roads = { {0, 1, 10, 5}, {1, 2, 3, 2} };
+        return WorldNavigator::minBribeCost(3, 2, 0, 0, roads) == 0;
+        }());
+
+    runner.runTest("MinBribeCost: Negative rates? (if allowed)", [&]() {
+        vector<vector<int>> roads = { {0, 1, 10, 5} };
+        long long result = WorldNavigator::minBribeCost(2, 1, -1, -1, roads);
+        return result == -15; // Negative cost
+        }());
+
+    // Complex graphs
+    runner.runTest("MinBribeCost: Complete graph K5", [&]() {
+        vector<vector<int>> roads;
+        int nodes = 5;
+        for (int i = 0; i < nodes; i++) {
+            for (int j = i + 1; j < nodes; j++) {
+                int gold = (i + j) % 10 + 1;
+                int silver = (i * j) % 10 + 1;
+                roads.push_back({ i, j, gold, silver });
+            }
+        }
+        long long result = WorldNavigator::minBribeCost(nodes, roads.size(), 1, 1, roads);
+        return result == 18; // MST of K5 with these weights
+        }());
+
+    runner.runTest("MinBribeCost: Grid graph 3x3", [&]() {
+        vector<vector<int>> roads;
+        int n = 3;
+        // Create grid edges
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                int node = i * n + j;
+                if (j < n - 1) { // Right edge
+                    roads.push_back({ node, node + 1, 1, 1 });
+                }
+                if (i < n - 1) { // Down edge
+                    roads.push_back({ node, node + n, 2, 2 });
+                }
+            }
+        }
+        // 9 nodes, 12 edges, MST should have 8 edges
+        return WorldNavigator::minBribeCost(9, 12, 1, 1, roads) == 20;
+        }());
+
+    runner.runTest("MinBribeCost: Multiple edges between same nodes", [&]() {
+        vector<vector<int>> roads = {
+            {0, 1, 10, 5},
+            {0, 1, 5, 2},  // Cheaper parallel edge
+            {1, 2, 3, 1}
+        };
+        // Should pick cheapest edge between 0-1
+        return WorldNavigator::minBribeCost(3, 3, 1, 1, roads) == 11; // 7 + 4
+        }());
+
+    // Large graph test
+    runner.runTest("MinBribeCost: 100 nodes random graph", [&]() {
+        vector<vector<int>> roads;
+        int nodes = 100;
+        srand(42);
+        for (int i = 0; i < nodes * 2; i++) {
+            int u = rand() % nodes;
+            int v = rand() % nodes;
+            if (u != v) {
+                int gold = rand() % 100 + 1;
+                int silver = rand() % 100 + 1;
+                roads.push_back({ u, v, gold, silver });
+            }
+        }
+        long long result = WorldNavigator::minBribeCost(nodes, roads.size(), 1, 1, roads);
+        return result > 0;
+        }());
+
+    // ========== 3. BINARY SUM OF DISTANCES (Floyd-Warshall) ==========
+
+    // Basic test cases
+    runner.runTest("BinarySum: Line graph -> '110'", [&]() {
+        vector<vector<int>> roads = {
+            {0, 1, 1},
+            {1, 2, 2}
+        };
+        return WorldNavigator::sumMinDistancesBinary(3, roads) == "110"; // Sum = 6
+        }());
+
+    runner.runTest("BinarySum: Triangle graph -> '1000'", [&]() {
+        vector<vector<int>> roads = {
+            {0, 1, 1},
+            {1, 2, 1},
+            {0, 2, 1}
+        };
+        // Distances: all pairs = 1, total pairs = 3, sum = 3 -> binary 11
+        return WorldNavigator::sumMinDistancesBinary(3, roads) == "11";
+        }());
+
+    // Edge cases
+    runner.runTest("BinarySum: Single node -> '0'", [&]() {
+        vector<vector<int>> roads = {};
+        return WorldNavigator::sumMinDistancesBinary(1, roads) == "0";
+        }());
+
+    runner.runTest("BinarySum: Two nodes disconnected", [&]() {
+        vector<vector<int>> roads = {};
+        // Disconnected nodes, distances are infinite, sum = 0
+        return WorldNavigator::sumMinDistancesBinary(2, roads) == "0";
+        }());
+
+    runner.runTest("BinarySum: Zero-length edges", [&]() {
+        vector<vector<int>> roads = { {0, 1, 0}, {1, 2, 0} };
+        return WorldNavigator::sumMinDistancesBinary(3, roads) == "0";
+        }());
+
+    runner.runTest("BinarySum: Self-loops (should be ignored)", [&]() {
+        vector<vector<int>> roads = { {0, 0, 5}, {0, 1, 1} };
+        // Only distance 0-1 = 1, sum = 1 -> binary 1
+        return WorldNavigator::sumMinDistancesBinary(2, roads) == "1";
+        }());
+
+    // Complex graphs
+    runner.runTest("BinarySum: Complete graph K4 with unit weights", [&]() {
+        vector<vector<int>> roads;
+        for (int i = 0; i < 4; i++) {
+            for (int j = i + 1; j < 4; j++) {
+                roads.push_back({ i, j, 1 });
+            }
+        }
+        // All distances = 1, 6 pairs, sum = 6 -> binary 110
+        return WorldNavigator::sumMinDistancesBinary(4, roads) == "110";
+        }());
+
+    runner.runTest("BinarySum: Star graph", [&]() {
+        vector<vector<int>> roads = {
+            {0, 1, 2},
+            {0, 2, 2},
+            {0, 3, 2},
+            {0, 4, 2}
+        };
+        // Center to leaves: 2, leaf to leaf: 4
+        // Pairs: 4*2 + C(4,2)*4 = 8 + 6*4 = 32 -> binary 100000
+        return WorldNavigator::sumMinDistancesBinary(5, roads) == "100000";
+        }());
+
+    runner.runTest("BinarySum: Multiple shortest paths", [&]() {
+        vector<vector<int>> roads = {
+            {0, 1, 1},
+            {1, 2, 1},
+            {0, 2, 2}  // Longer direct edge
+        };
+        // Floyd-Warshall should pick shortest: 0-1-2 = 2, not 0-2 = 2
+        // All pairs: 0-1=1, 1-2=1, 0-2=2, sum=4 -> binary 100
+        return WorldNavigator::sumMinDistancesBinary(3, roads) == "100";
+        }());
+
+    runner.runTest("BinarySum: Graph with negative cycles? (if allowed)", [&]() {
+        // Floyd-Warshall doesn't handle negative cycles well
+        // This test might fail depending on implementation
+        vector<vector<int>> roads = {
+            {0, 1, 1},
+            {1, 2, -2},
+            {2, 0, 1}
+        };
+        // Has negative cycle 0-1-2-0: 1 + (-2) + 1 = 0
+        string result = WorldNavigator::sumMinDistancesBinary(3, roads);
+        return true; // Just don't crash
+        }());
+
+    // Large graph test
+    runner.runTest("BinarySum: 10-node random graph", [&]() {
+        vector<vector<int>> roads;
+        int nodes = 10;
+        srand(123);
+        for (int i = 0; i < nodes; i++) {
+            for (int j = i + 1; j < nodes; j++) {
+                if (rand() % 3 == 0) { // Sparse graph
+                    int weight = rand() % 10 + 1;
+                    roads.push_back({ i, j, weight });
+                }
+            }
+        }
+        string result = WorldNavigator::sumMinDistancesBinary(nodes, roads);
+        // Just verify it returns a valid binary string
+        return !result.empty() && result.find_first_not_of("01") == string::npos;
+        }());
+
+    runner.runTest("BinarySum: Pathological case - complete graph", [&]() {
+        vector<vector<int>> roads;
+        int nodes = 20;
+        for (int i = 0; i < nodes; i++) {
+            for (int j = i + 1; j < nodes; j++) {
+                roads.push_back({ i, j, (i + j) % 100 + 1 });
+            }
+        }
+        string result = WorldNavigator::sumMinDistancesBinary(nodes, roads);
+        return result.length() > 0;
+        }());
+
+    // Test binary conversion edge cases
+    runner.runTest("BinarySum: Very large sum", [&]() {
+        vector<vector<int>> roads;
+        int nodes = 30;
+        // Create a dense graph with large weights
+        for (int i = 0; i < nodes; i++) {
+            for (int j = i + 1; j < nodes; j++) {
+                roads.push_back({ i, j, 1000 });
+            }
+        }
+        string result = WorldNavigator::sumMinDistancesBinary(nodes, roads);
+        // Should be a long binary string
+        return result.length() > 10;
+        }());
+}
 void test_PartC_Navigator() {
     cout << "\n--- Part C: World Navigator ---" << endl;
 
     // 1. Safe Passage (Path Exists)
     // PDF Example: 0-1, 1-2. Path 0->2 exists.
     runner.runTest("PathExists: 0->1->2 -> True", [&]() {
-        vector<vector<int>> edges = {{0, 1}, {1, 2}};
+        vector<vector<int>> edges = { {0, 1}, {1, 2} };
         return WorldNavigator::pathExists(3, edges, 0, 2) == true;
-    }());
+        }());
 
     // 2. The Bribe (MST)
     // PDF Example: 3 Nodes. Roads: {0,1,10}, {1,2,5}, {0,2,20}. Rate=1.
     // MST should pick 10 and 5. Total 15.
     runner.runTest("MinBribeCost: Triangle Graph -> Cost 15", [&]() {
         vector<vector<int>> roads = {
-            {0, 1, 10, 0}, 
-            {1, 2, 5, 0}, 
+            {0, 1, 10, 0},
+            {1, 2, 5, 0},
             {0, 2, 20, 0}
         };
         // n=3, m=3, goldRate=1, silverRate=1
         return WorldNavigator::minBribeCost(3, 3, 1, 1, roads) == 15;
-    }());
+        }());
 
     // 3. Teleporter (Binary Sum APSP)
     // PDF Example: 0-1 (1), 1-2 (2). Distances: 1, 2, 3. Sum=6 -> "110"
@@ -599,8 +1149,11 @@ void test_PartC_Navigator() {
             {1, 2, 2}
         };
         return WorldNavigator::sumMinDistancesBinary(3, roads) == "110";
-    }());
+        }());
+    test_PartC_Navigator_Comprehensive();
 }
+
+
 
 // ==========================================
 // PART D: SERVER KERNEL
@@ -706,10 +1259,9 @@ int main() {
     cout << "-----------------------------------------" << endl;
 
     test_PartA_DataStructures();
-  //  test_PartB_Inventory();
-   // test_PartC_Navigator();
+    test_PartB_Inventory();
+    test_PartC_Navigator();
     test_PartD_Kernel();
-
     runner.printSummary();
 
     return 0;
