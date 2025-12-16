@@ -649,14 +649,35 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-    return 0;
+    int sum = 0;
+for (int c : coins) sum += c;
+
+vector<bool> dp(sum + 1, false);
+dp[0] = true;
+
+for (int c : coins)
+    for (int s = sum; s >= c; s--)
+        dp[s] = dp[s] || dp[s - c];
+
+int best = sum;
+for (int s = 0; s <= sum; s++)
+    if (dp[s])
+        best = min(best, abs(sum - 2 * s));
+
+return best;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
     // TODO: Implement 0/1 Knapsack using DP
     // items = {weight, value} pairs
     // Return maximum value achievable within capacity
-    return 0;
+    vector<int> dp(capacity + 1, 0);
+
+for (auto& it : items)
+    for (int w = capacity; w >= it.first; w--)
+        dp[w] = max(dp[w], dp[w - it.first] + it.second);
+
+return dp[capacity];
 }
 
 long long InventorySystem::countStringPossibilities(string s) {
@@ -664,7 +685,24 @@ long long InventorySystem::countStringPossibilities(string s) {
     // Rules: "uu" can be decoded as "w" or "uu"
     //        "nn" can be decoded as "m" or "nn"
     // Count total possible decodings
-    return 0;
+    int n = s.size();
+    vector<long long> dp(n + 1, 0);
+    dp[n] = 1;  // empty string has one decoding
+
+    for (int i = n - 1; i >= 0; i--) {
+        // Take single character
+        dp[i] = dp[i + 1];
+
+        // Take special pairs
+        if (i + 1 < n) {
+            if ((s[i] == 'u' && s[i + 1] == 'u') ||
+                (s[i] == 'n' && s[i + 1] == 'n')) {
+                dp[i] += dp[i + 2];
+            }
+        }
+    }
+
+    return dp[0];
 }
 
 // =========================================================
